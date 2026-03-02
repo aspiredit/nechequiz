@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NECHE Accreditation Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0a1628;
+    --deep: #112244;
+    --gold: #c9a84c;
+    --gold-light: #e8c96e;
+    --cream: #f5f0e8;
+    --text: #1a2540;
+    --muted: #6b7a99;
+    --correct: #2d7a4e;
+    --correct-bg: #edf7f1;
+    --wrong: #a63228;
+    --wrong-bg: #fdf0ef;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--navy);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(17,34,68,0.6) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Decorative lines */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(201,168,76,0.03) 0px,
+      rgba(201,168,76,0.03) 1px,
+      transparent 1px,
+      transparent 80px
+    );
+    pointer-events: none;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 760px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 42px);
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  h1 span {
+    color: var(--gold);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 16px;
+    font-weight: 300;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Progress */
+  .progress-area {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeIn 0.6s ease 0.3s both;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .progress-label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  /* Score */
+  .score-display {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .score-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s ease;
+  }
+
+  .score-dot.correct { background: #4caf7d; }
+  .score-dot.wrong { background: #e05a52; }
+
+  /* Card */
+  .quiz-card {
+    background: rgba(255,255,255,0.97);
+    border-radius: 16px;
+    padding: 44px 48px;
+    box-shadow:
+      0 4px 6px rgba(0,0,0,0.07),
+      0 20px 60px rgba(0,0,0,0.3),
+      0 0 0 1px rgba(201,168,76,0.15);
+    animation: fadeUp 0.6s ease 0.1s both;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 560px) {
+    .quiz-card { padding: 28px 24px; }
+  }
+
+  /* Question */
+  .question-number {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+
+  .question-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(17px, 2.5vw, 21px);
+    color: var(--text);
+    line-height: 1.55;
+    margin-bottom: 32px;
+    flex: none;
+  }
+
+  /* Options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .option-btn {
+    background: #f8f7f5;
+    border: 2px solid #e8e5df;
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    font-weight: 400;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 50%;
+    background: #e8e5df;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    transition: all 0.2s ease;
+    margin-top: 1px;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--gold);
+    background: #fffdf7;
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(201,168,76,0.15);
+  }
+
+  .option-btn:hover:not(:disabled) .option-letter {
+    background: var(--gold);
+    color: var(--navy);
+  }
+
+  .option-btn:disabled { cursor: default; transform: none !important; }
+
+  .option-btn.correct-answer {
+    border-color: var(--correct);
+    background: var(--correct-bg);
+    box-shadow: 0 4px 20px rgba(45,122,78,0.15);
+  }
+
+  .option-btn.correct-answer .option-letter {
+    background: var(--correct);
+    color: white;
+  }
+
+  .option-btn.wrong-answer {
+    border-color: var(--wrong);
+    background: var(--wrong-bg);
+    opacity: 0.75;
+  }
+
+  .option-btn.wrong-answer .option-letter {
+    background: var(--wrong);
+    color: white;
+  }
+
+  .option-btn.dim { opacity: 0.45; }
+
+  /* Explanation */
+  .explanation {
+    margin-top: 24px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #edf7f1, #e8f4ec);
+    border-left: 4px solid var(--correct);
+    border-radius: 0 10px 10px 0;
+    animation: slideIn 0.4s ease both;
+  }
+
+  .explanation-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--correct);
+    margin-bottom: 8px;
+  }
+
+  .explanation-text {
+    font-size: 15px;
+    color: #1e4832;
+    line-height: 1.6;
+  }
+
+  /* Next button */
+  .next-btn {
+    margin-top: 28px;
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--navy), var(--deep));
+    color: var(--gold-light);
+    border: none;
+    border-radius: 8px;
+    padding: 13px 32px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(10,22,40,0.3);
+    animation: fadeIn 0.4s ease both;
+  }
+
+  .next-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(10,22,40,0.4);
+    background: linear-gradient(135deg, #112244, #1a3366);
+  }
+
+  /* Results Screen */
+  .results-screen {
+    text-align: center;
+    padding: 20px 0;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .results-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  .results-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .score-big {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    margin: 20px 0 8px;
+  }
+
+  .score-big span {
+    color: var(--gold);
+  }
+
+  .score-sub {
+    color: var(--muted);
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .results-message {
+    background: #f8f7f5;
+    border-radius: 12px;
+    padding: 20px 28px;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 32px;
+    text-align: left;
+  }
+
+  .restart-btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    padding: 14px 40px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+
+  .restart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(201,168,76,0.4);
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .card-transition {
+    animation: fadeUp 0.4s ease both;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="badge">VTSU Education Series</div>
+    <h1>Understanding <span>NECHE</span> Accreditation</h1>
+    <p class="subtitle">Test your knowledge about what accreditation means for our institution and community.</p>
+  </div>
+
+  <div class="progress-area">
+    <div class="score-display" id="scoreDots"></div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Question 1 of 5</div>
+  </div>
+
+  <div class="quiz-card" id="quizCard">
+    <!-- Injected by JS -->
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "What is the primary purpose of NECHE (New England Commission of Higher Education) accreditation?",
+    options: [
+      "To rank colleges and universities based on performance and reputation within the region",
+      "To provide an independent quality assurance process that ensures an institution meets established standards of excellence",
+      "To approve individual degree programs and certify faculty qualifcations in specific disciplines",
+      "To determine whether institutions qualify for federal financial aid"
+    ],
+    correct: 1,
+    explanation: "NECHE accreditation is a voluntary, peer-review process that assures students, the public, and stakeholders that an institution meets rigorous standards of educational quality. It is not a ranking system or a regulatory body — it is a quality assurance and improvement process."
+  },
+  {
+    q: "What is a 'Self-Study' in the context of NECHE accreditation?",
+    options: [
+      "An independent audit conducted by NECHE staff members who evaluate institutional finances",
+      "A state-mandated review process in which faculty individually document their teaching performance",
+      "A comprehensive, institution-wide evaluation in which the college examines its own strengths, challenges, and alignment with accreditation standards",
+      "A curriculum review process required before launching new academic degree programs"
+    ],
+    correct: 2,
+    explanation: "The Self-Study is the cornerstone of the NECHE reaccreditation process. The entire campus community — faculty, staff, students, and administrators — contributes to an honest, evidence-based examination of the institution against NECHE's Standards for Accreditation. It drives genuine institutional improvement."
+  },
+  {
+    q: "Why does accreditation matter to students specifically?",
+    options: [
+      "It guarantees that students will receive merit-based scholarships funded by the federal government",
+      "It ensures students can transfer credits to other institutions and that their degrees are widely recognized by employers and graduate schools",
+      "It provides students with access to exclusive internship networks managed by NECHE member institutions",
+      "It allows students to waive standardized testing requirements when applying to graduate programs"
+    ],
+    correct: 1,
+    explanation: "Accreditation is critical for students because it validates the quality of their education. Without it, federal financial aid (including Pell Grants and student loans) would be unavailable, credits may not transfer, and degrees may not be recognized by employers or graduate/professional schools."
+  },
+  {
+    q: "How often does NECHE conduct a comprehensive evaluation of an accredited institution?",
+    options: [
+      "Every two years, with a full site visit and financial review conducted annually by an appointed commission",
+      "Once during an institution's founding period, and only again if a formal complaint is submitted",
+      "Every ten years, during which the institution completes a Self-Study and receives a visit from a peer evaluation team",
+      "Every five years, with alternating cycles of financial review and academic program assessment"
+    ],
+    correct: 2,
+    explanation: "NECHE operates on a ten-year comprehensive evaluation cycle. During this process, the institution prepares an in-depth Self-Study document and hosts a team of peer evaluators who visit campus to verify findings. Between full reviews, institutions also submit periodic reports to demonstrate continued progress."
+  },
+  {
+    q: "What does it mean for accreditation to be a 'peer review' process?",
+    options: [
+      "Students from peer institutions evaluate each other's coursework and assign final course grades collaboratively",
+      "Faculty and staff from accredited institutions voluntarily evaluate other colleges against shared standards, drawing on their own professional experience",
+      "A government agency assigns certified inspectors to assess whether institutions comply with federal education law",
+      "NECHE commissioners review institutional budgets and compare them against peer institutions of similar size and mission"
+    ],
+    correct: 1,
+    explanation: "Peer review is a defining feature of accreditation. Evaluators are experienced educators and administrators from other NECHE-accredited institutions — not government officials or outside consultants. They bring professional expertise and a shared understanding of higher education to assess whether standards are being met, making the process credible and collaborative."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = [];
+
+const card = document.getElementById('quizCard');
+const fill = document.getElementById('progressFill');
+const label = document.getElementById('progressLabel');
+const dots = document.getElementById('scoreDots');
+
+function initDots() {
+  dots.innerHTML = '';
+  for (let i = 0; i < questions.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'score-dot';
+    d.id = `dot-${i}`;
+    dots.appendChild(d);
+  }
+}
+
+function updateProgress() {
+  const pct = (current / questions.length) * 100;
+  fill.style.width = pct + '%';
+  label.textContent = current < questions.length
+    ? `Question ${current + 1} of ${questions.length}`
+    : `Complete!`;
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const letters = ['A','B','C','D'];
+  card.className = 'quiz-card card-transition';
+
+  card.innerHTML = `
+    <div class="question-number">Question ${current + 1} &nbsp;·&nbsp; NECHE Accreditation</div>
+    <div class="question-text">${q.q}</div>
+    <div class="options" id="options">
+      ${q.options.map((opt, i) => `
+        <button class="option-btn" data-index="${i}" onclick="selectAnswer(${i})">
+          <span class="option-letter">${letters[i]}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  updateProgress();
+}
+
+function selectAnswer(index) {
+  const q = questions[current];
+  const btns = document.querySelectorAll('.option-btn');
+
+  btns.forEach(btn => btn.disabled = true);
+
+  const selectedBtn = btns[index];
+  const correctBtn = btns[q.correct];
+
+  if (index === q.correct) {
+    selectedBtn.classList.add('correct-answer');
+    score++;
+    document.getElementById(`dot-${current}`).classList.add('correct');
+  } else {
+    selectedBtn.classList.add('wrong-answer');
+    correctBtn.classList.add('correct-answer');
+    document.getElementById(`dot-${current}`).classList.add('wrong');
+  }
+
+  // Dim others
+  btns.forEach((btn, i) => {
+    if (i !== index && i !== q.correct) btn.classList.add('dim');
+  });
+
+  // Show explanation
+  const optionsDiv = document.getElementById('options');
+  const exp = document.createElement('div');
+  exp.className = 'explanation';
+  exp.innerHTML = `
+    <div class="explanation-label">✓ Explanation</div>
+    <div class="explanation-text">${q.explanation}</div>
+  `;
+  card.appendChild(exp);
+
+  // Next button
+  const next = document.createElement('button');
+  next.className = 'next-btn';
+  next.textContent = current < questions.length - 1 ? 'Next Question →' : 'See Results →';
+  next.onclick = () => {
+    current++;
+    if (current < questions.length) renderQuestion();
+    else renderResults();
+  };
+  card.appendChild(next);
+}
+
+function renderResults() {
+  updateProgress();
+  fill.style.width = '100%';
+
+  let emoji, title, message;
+  const pct = score / questions.length;
+
+  if (pct === 1) {
+    emoji = '🏅';
+    title = 'Outstanding!';
+    message = `A perfect score! You have an excellent understanding of NECHE accreditation and what it means for our institution. Your knowledge will be invaluable as we navigate the Self-Study process together. Share what you've learned with your colleagues!`;
+  } else if (pct >= 0.6) {
+    emoji = '⭐';
+    title = 'Well Done!';
+    message = `Great work! You have a solid grasp of accreditation fundamentals. Review the explanations for any questions you missed — understanding every aspect of NECHE accreditation helps our whole campus community contribute meaningfully to the Self-Study.`;
+  } else {
+    emoji = '📚';
+    title = 'Keep Learning!';
+    message = `Thanks for participating! Accreditation can be complex, and this is exactly why campus education matters. Review the explanations and retake the quiz — every member of our community plays a role in our Self-Study, and your understanding makes a difference.`;
+  }
+
+  card.className = 'quiz-card card-transition';
+  card.innerHTML = `
+    <div class="results-screen">
+      <span class="results-icon">${emoji}</span>
+      <div class="results-title">${title}</div>
+      <div class="score-big">${score}<span>/${questions.length}</span></div>
+      <div class="score-sub">${Math.round(pct * 100)}% Correct</div>
+      <div class="results-message">${message}</div>
+      <button class="restart-btn" onclick="restartQuiz()">Retake Quiz</button>
+    </div>
+  `;
+}
+
+function restartQuiz() {
+  current = 0;
+  score = 0;
+  initDots();
+  renderQuestion();
+}
+
+// Init
+initDots();
+renderQuestion();
+</script>
+</body>
+</html>
